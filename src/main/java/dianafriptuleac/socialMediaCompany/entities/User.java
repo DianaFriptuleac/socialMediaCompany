@@ -44,7 +44,7 @@ public class User implements UserDetails {
         this.email = email;
         this.password = password;
         this.avatar = avatar;
-        this.role = role;
+        this.role = role != null ? role : Role.USER; // se role è null, assegna USER
     }
 
     @Override
