@@ -35,6 +35,7 @@ public class JWTCheckerFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        // System.out.println("[JWT] filter path = " + request.getServletPath());
         String path = request.getServletPath();   //Ottiene il percorso (endpoint) della richiesta, es: "/api/posts".
         String authHeader = request.getHeader("Authorization");
         //Recupera l’intestazione "Authorization" della richiesta,dove viene inviato il token JWT con formato: "Bearer <token>".

@@ -23,7 +23,7 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, JWTCheckerFilter jwtCheckerFilter) throws Exception {
         //  la catena di filtri di Spring Security
 
         httpSecurity.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable());
@@ -40,9 +40,15 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(authorizationManagerRequestMatcherRegistry ->
                 authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/**").permitAll().anyRequest().authenticated());
 
-        httpSecurity.cors(Customizer.withDefaults());
-        //Abilita CORS usando la CorsConfigurationSource definita sotto (bean corsConfigurationSource())
-
+        httpSecurity.cors(Customizer.withDefaults())
+                //Abilita CORS usando la CorsConfigurationSource definita sotto (bean corsConfigurationSource())
+                .addFilterBefore(
+                        jwtCheckerFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
+                );
+        // Aggiunge il filtro JWT personalizzato prima del filtro standard di login di Spring Security.
+        // Per ogni richiesta, il sistema controlla prima se esiste un token Bearer valido
+        // (autenticazione tramite JWT) prima di eseguire l’autenticazione classica con username/password.
         return httpSecurity.build();
         // Costruisce e restituisce la SecurityFilterChain
     }

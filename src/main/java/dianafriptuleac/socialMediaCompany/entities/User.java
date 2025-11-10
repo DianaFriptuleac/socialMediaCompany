@@ -43,6 +43,9 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)   // per enum -> Ruolo utente salvato come stringa nel DB
     private Role role;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.Set<UserDepartmentRole> departmentRoles = new java.util.HashSet<>();
+
 
     public User(String name, String surname, String email, String password, String avatar, Role role) {
         this.name = name;
