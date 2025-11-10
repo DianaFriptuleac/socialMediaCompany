@@ -34,10 +34,11 @@ public class UserService {
     @Autowired
     private Cloudinary cloudinary;
 
+    // ----------------------  Save user
     public User save(UserDTO body) {
         this.userRepository.findByEmail(body.email()).ifPresent(
                 utente -> {
-                    throw new BadRequestException("Email " + body.email() + " già in uso!");
+                    throw new BadRequestException("Email " + body.email() + " already in use!");
                 }
         );
         User newUser = new User(body.name(), body.surname(), body.email(),
@@ -46,6 +47,8 @@ public class UserService {
         return this.userRepository.save(newUser);
     }
 
+
+    // ------------------------  Find all users
     public Page<User> findAll(int page, int size, String sortBy) {
         if (size > 100)
             size = 100;
@@ -53,23 +56,28 @@ public class UserService {
         return this.userRepository.findAll(pageable);
     }
 
+
+    //-------------------------  Find user by ID
     public User findById(UUID utenteId) {
         return this.userRepository.findById(utenteId)
-                .orElseThrow(() -> new NotFoundException("Utente con ID " + utenteId + " non trovato"));
+                .orElseThrow(() -> new NotFoundException("User with ID " + utenteId + " not found"));
     }
 
+
+    // ------------------------  Find user by email
     public User findByEmail(String email) {
         return this.userRepository.findByEmail(email).orElseThrow(() ->
-                new NotFoundException("L'utente con email " + email + " non è stato trovato"));
+                new NotFoundException("User with email " + email + " not found"));
     }
 
+    //-------------------------  Update user
     public User findByIdAndUpdate(UUID utenteId, UserDTO body) {
         User foundUtente = this.findById(utenteId);
 
         if (body.email() != null && !foundUtente.getEmail().equals(body.email())) {
             this.userRepository.findByEmail(body.email()).ifPresent(
                     utente -> {
-                        throw new BadRequestException("Email " + body.email() + " è già in uso!");
+                        throw new BadRequestException("Email " + body.email() + " alredy in use!");
                     }
             );
             foundUtente.setEmail(body.email());
@@ -92,28 +100,42 @@ public class UserService {
     }
 
 
+    // ----------------------  delete user
     public void findByIdAndDelete(UUID userId) {
         User foundUser = this.findById(userId);
         this.userRepository.delete(foundUser);
     }
 
+
+    // ------------------------ Upload user Avatar
     public Map<String, String> uploadAvatar(UUID usertId, MultipartFile file) {
-        System.out.println("File ricevuto: " + file.getOriginalFilename());
+
+        //Stampa informazioni di debug sul file ricevuto
+        System.out.println("File received: " + file.getOriginalFilename());
         System.out.println("Content-Type: " + file.getContentType());
-        System.out.println("Dimensione: " + file.getSize());
+        System.out.println("Size: " + file.getSize());
+
+        //Recupera utente dal db tramite il suo ID
         User user = findById(usertId);
         String url;
 
         try {
+            // Carica il file su Cloudinary e ottiene la URL pubblica dell'immagine
             url = (String) cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap()).get("url");
+
+            //Aggiorna il campo avatar dell’utente con la nuova URL
             user.setAvatar(url);
-            userRepository.save(user);
+            userRepository.save(user);  // salva la modifica nel db
         } catch (IOException e) {
-            throw new BadRequestException("Errore durante l'upload dell'immagine.");
+            throw new BadRequestException("Error loading image.");
         }
 
+        // Crea una mappa (chiave→valore) da restituire come risposta
+        // - La chiave "avatarUrl" conterrà la URL dell’immagine caricata
         Map<String, String> response = new HashMap<>();
         response.put("avatarUrl", url);
+
+        // Ritorna la mappa (che Spring convertirà automaticamente in JSON)
         return response;
     }
 

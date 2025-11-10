@@ -15,27 +15,33 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
+@Entity  // tabella nel DB
 @Table(name = "users")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor // Lombok -> costruttore vuoto (necessario per JPA)
+
 @JsonIgnoreProperties({"password", "role", "accountNonLocked", "credentialsNonExpired",
         "accountNonExpired", "authorities", "enabled"})
+// Non include questi campi quando l'oggetto viene convertito in JSON
+// (es. per sicurezza non mostrare password e campi tecnici di Spring Security)
+
 public class User implements UserDetails {
+    //UserDetails di Spring Security -> per gestire autenticazione e autorizzazioni
+    @Getter
     @Id
-    @GeneratedValue
-    @Setter(AccessLevel.NONE)
+    @GeneratedValue  // genera automaticamente un UUID dal sistema
+    @Setter(AccessLevel.NONE)    // Non è possibile modificarlo (setter disabilitato da Lombok)
     private UUID id;
 
     private String name;
     private String surname;
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false)   // // Indirizzo email univoco e obbligatorio
     private String email;
     private String password;
     private String avatar;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)   // per enum -> Ruolo utente salvato come stringa nel DB
     private Role role;
 
     public User(String name, String surname, String email, String password, String avatar, Role role) {
@@ -47,6 +53,8 @@ public class User implements UserDetails {
         this.role = role != null ? role : Role.USER; // se role è null, assegna USER
     }
 
+
+    //toString sovrascritto (override) per mostrare i dati dell’utente in formato leggibile
     @Override
     public String toString() {
         return "User{" +
@@ -63,9 +71,17 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(this.role.name()));
     }
+    // Metodo richiesto da UserDetails
+    // Restituisce una lista di Authority (permessi) basate sul ruolo dell’utente (se role = ADMIN → ["ADMIN"])
 
     @Override
     public String getUsername() {
         return this.email;
     }
+    // Metodo getUsername() richiesto da UserDetails
+    // Definisce che per Spring Security, l’email è lo “username” dell’utente.
+
+    // I metodi seguenti (non mostrati ma ereditati da UserDetails) come isAccountNonExpired(), isAccountNonLocked(), ecc.
+    // vengono gestiti da Spring Security (di default true) (perché non gli ho sovrascritti).
+
 }
