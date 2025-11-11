@@ -1,5 +1,6 @@
 package dianafriptuleac.socialMediaCompany.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dianafriptuleac.socialMediaCompany.enums.DepartmentType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -28,6 +29,7 @@ public class Department {
     private String description;
 
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<UserDepartmentRole> memberships = new HashSet<>();
 
     public Department(DepartmentType departmentType, String description) {

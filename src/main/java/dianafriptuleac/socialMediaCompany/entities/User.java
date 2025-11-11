@@ -1,5 +1,6 @@
 package dianafriptuleac.socialMediaCompany.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dianafriptuleac.socialMediaCompany.enums.Role;
 import jakarta.persistence.*;
@@ -13,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity  // tabella nel DB
@@ -27,25 +29,23 @@ import java.util.UUID;
 // (es. per sicurezza non mostrare password e campi tecnici di Spring Security)
 
 public class User implements UserDetails {
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    Set<UserDepartmentRole> departmentRoles = new java.util.HashSet<>();
     //UserDetails di Spring Security -> per gestire autenticazione e autorizzazioni
     @Getter
     @Id
     @GeneratedValue  // genera automaticamente un UUID dal sistema
     @Setter(AccessLevel.NONE)    // Non è possibile modificarlo (setter disabilitato da Lombok)
     private UUID id;
-
     private String name;
     private String surname;
     @Column(unique = true, nullable = false)   // // Indirizzo email univoco e obbligatorio
     private String email;
     private String password;
     private String avatar;
-
     @Enumerated(EnumType.STRING)   // per enum -> Ruolo utente salvato come stringa nel DB
     private Role role;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.Set<UserDepartmentRole> departmentRoles = new java.util.HashSet<>();
-
 
     public User(String name, String surname, String email, String password, String avatar, Role role) {
         this.name = name;
