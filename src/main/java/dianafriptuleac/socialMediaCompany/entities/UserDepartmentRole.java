@@ -1,6 +1,5 @@
 package dianafriptuleac.socialMediaCompany.entities;
 
-import dianafriptuleac.socialMediaCompany.enums.DepartmentRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,7 +28,6 @@ public class UserDepartmentRole {
             foreignKey = @ForeignKey(name = "fk_udr_department"))
     private Department department;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 60)
-    private DepartmentRole role;
+    private String role;
 }

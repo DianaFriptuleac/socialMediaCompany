@@ -2,7 +2,6 @@ package dianafriptuleac.socialMediaCompany.controllers;
 
 import dianafriptuleac.socialMediaCompany.entities.Department;
 import dianafriptuleac.socialMediaCompany.entities.User;
-import dianafriptuleac.socialMediaCompany.enums.DepartmentRole;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
 import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
@@ -59,7 +58,7 @@ public class DepartmentMembershipController {
                 .entrySet().stream()
                 .map(entry -> {
                     User user = entry.getValue().get(0).getUser();
-                    List<DepartmentRole> roles = entry.getValue().stream()
+                    List<String> roles = entry.getValue().stream()
                             .map(udr -> udr.getRole())
                             .distinct()
                             .toList();
@@ -76,10 +75,28 @@ public class DepartmentMembershipController {
 
         return new DepartmentWithUserDTO(
                 department.getId(),
-                department.getDepartmentType().name(),
+                department.getName(),
                 department.getDescription(),
                 users.size(),
                 users
         );
     }
+
+    // Calcola nr. utendi nel department
+    @GetMapping("/{id}/count")
+    @ResponseStatus(HttpStatus.OK)
+    public long countUsersInDepartment(@PathVariable("id") UUID id) {
+        return departmentMembershipService.getUserCountInDepartment(id);
+    }
+
+    //Calcola ne. ruoli x department
+    @GetMapping("/{id}/count/{role}")
+    public long countUsersInDepartmentByRole(
+            @PathVariable UUID id,
+            @PathVariable String role
+    ) {
+        return departmentMembershipService.countUsersByDepartmentAndRole(id, role);
+    }
+
+
 }

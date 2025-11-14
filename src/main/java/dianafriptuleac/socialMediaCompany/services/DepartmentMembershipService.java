@@ -3,7 +3,7 @@ package dianafriptuleac.socialMediaCompany.services;
 import dianafriptuleac.socialMediaCompany.entities.Department;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.entities.UserDepartmentRole;
-import dianafriptuleac.socialMediaCompany.enums.DepartmentRole;
+import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
 import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
@@ -33,14 +33,15 @@ public class DepartmentMembershipService {
     /* -------------------- DEPARTMENTS -------------------- */
     @Transactional
     public Department createDepartment(DepartmentCreateDTO departmentCreateDTO) {
-        if (departmentCreateDTO == null || departmentCreateDTO.departmentType() == null) {
+        if (departmentCreateDTO == null || departmentCreateDTO.name().isBlank()) {
             throw new IllegalArgumentException("departmentType is required");
         }
+        String normalizedName = departmentCreateDTO.name().trim();
         //evita duplicati
-        departmentRepository.findByDepartmentType(departmentCreateDTO.departmentType()).ifPresent(d -> {
-            throw new IllegalArgumentException("Department already exists: " + departmentCreateDTO.departmentType());
+        departmentRepository.findByNameIgnoreCase(normalizedName).ifPresent(d -> {
+            throw new BadRequestException("Department already exists: " + normalizedName);
         });
-        Department department = new Department(departmentCreateDTO.departmentType(), departmentCreateDTO.description());
+        Department department = new Department(normalizedName, departmentCreateDTO.description());
         return departmentRepository.save(department);
     }
 
@@ -69,11 +70,11 @@ public class DepartmentMembershipService {
         List<UserDepartmentRole> current = userDepartmentRoleRepository.findByUserIdAndDepartmentId(
                 user.getId(), department.getId()
         );
-        Set<DepartmentRole> currentRoles = current.stream().map(UserDepartmentRole::getRole).collect(Collectors.toSet());
+        Set<String> currentRoles = current.stream().map(UserDepartmentRole::getRole).collect(Collectors.toSet());
 
         // aggiunge solo quelli mancanti
         List<UserDepartmentRole> toSave = new ArrayList<>();
-        for (DepartmentRole role : dto.roles()) {
+        for (String role : dto.roles()) {
             if (!currentRoles.contains(role)) {
                 UserDepartmentRole membership = UserDepartmentRole.builder()
                         .user(user)
@@ -88,5 +89,13 @@ public class DepartmentMembershipService {
         }
     }
 
+    /* -------------------- NR OF USERS X DEPARTMENT-------------------- */
+    public long getUserCountInDepartment(UUID departmentId) {
+        return userDepartmentRoleRepository.countUsersInDepartment(departmentId);
+    }
 
+    /* -------------------- NR OF ROLE USERS X DEPARTMENT-------------------- */
+    public long countUsersByDepartmentAndRole(UUID departmentId, String role) {
+        return userDepartmentRoleRepository.countByDepartmentIdAndRole(departmentId, role);
+    }
 }

@@ -1,7 +1,6 @@
 package dianafriptuleac.socialMediaCompany.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dianafriptuleac.socialMediaCompany.enums.DepartmentType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,9 +20,8 @@ public class Department {
     @GeneratedValue
     private UUID id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private DepartmentType departmentType;
+    @Column(nullable = false, unique = true, length = 100)
+    private String name;
 
     @Column(length = 260)
     private String description;
@@ -32,8 +30,8 @@ public class Department {
     @JsonIgnore
     private Set<UserDepartmentRole> memberships = new HashSet<>();
 
-    public Department(DepartmentType departmentType, String description) {
-        this.departmentType = departmentType;
+    public Department(String name, String description) {
+        this.name = name;
         this.description = description;
     }
 }

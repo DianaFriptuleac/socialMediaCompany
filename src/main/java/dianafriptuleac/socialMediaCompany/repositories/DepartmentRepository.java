@@ -1,7 +1,6 @@
 package dianafriptuleac.socialMediaCompany.repositories;
 
 import dianafriptuleac.socialMediaCompany.entities.Department;
-import dianafriptuleac.socialMediaCompany.enums.DepartmentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,9 +9,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DepartmentRepository extends JpaRepository<Department, UUID> {
-    Optional<Department> findByDepartmentType(DepartmentType departmentType);
+    Optional<Department> findByNameIgnoreCase(String name);
 
-    boolean existsByDepartmentType(DepartmentType departmentType);
+    boolean existsByNameIgnoreCase(String name);
 
     @Query("""
                 select d from Department d
