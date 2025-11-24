@@ -67,7 +67,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000",     // Permette richieste dal frontend in locale
-                "http://localhost:5174",
+                "http://localhost:5173",
                 "https://*.onrender.com",    // Permette sottodomini su onrender.com
                 "https://*.vercel.app"));    // Permette sottodomini su vercel.app
         configuration.setAllowedMethods(Arrays.asList(

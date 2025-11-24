@@ -89,7 +89,7 @@ public class DepartmentMembershipController {
         return departmentMembershipService.getUserCountInDepartment(id);
     }
 
-    //Calcola ne. ruoli x department
+    //Calcola nr. ruoli x department
     @GetMapping("/{id}/count/{role}")
     public long countUsersInDepartmentByRole(
             @PathVariable UUID id,

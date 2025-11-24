@@ -3,6 +3,8 @@ package dianafriptuleac.socialMediaCompany.controllers;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.payloads.UserDTO;
+import dianafriptuleac.socialMediaCompany.payloads.UserDepartmentRolesViewDTO;
+import dianafriptuleac.socialMediaCompany.services.DepartmentMembershipService;
 import dianafriptuleac.socialMediaCompany.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +26,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private DepartmentMembershipService departmentMembershipService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -73,6 +78,15 @@ public class UserController {
         }
         System.out.println("File received: " + file.getOriginalFilename());
         return userService.uploadAvatar(currentAuthenticatedUser.getId(), file);
+    }
+
+    // Departments + Ruoli User
+    @GetMapping("/me/departments")
+    public List<UserDepartmentRolesViewDTO> getMyDepartments(
+            @AuthenticationPrincipal User currentAuthenticatedUser
+    ) {
+        // uso l'ID dell'utente loggato per recuperare i suoi reparti + ruoli
+        return departmentMembershipService.getDepartmentsForUser(currentAuthenticatedUser.getId());
     }
 
 

@@ -7,6 +7,7 @@ import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
 import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
+import dianafriptuleac.socialMediaCompany.payloads.UserDepartmentRolesViewDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserDepartmentRoleRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
@@ -98,4 +99,36 @@ public class DepartmentMembershipService {
     public long countUsersByDepartmentAndRole(UUID departmentId, String role) {
         return userDepartmentRoleRepository.countByDepartmentIdAndRole(departmentId, role);
     }
+
+    /* -------------------- DEPARTMENTS OF A USER -------------------- */
+    @Transactional
+    public List<UserDepartmentRolesViewDTO> getDepartmentsForUser(UUID userId) {
+        // prendo tutte le righe user_department_roles per questo utente
+        List<UserDepartmentRole> memberships = userDepartmentRoleRepository.findByUserId(userId);
+
+        // raggruppo per departmentId e costruisco il DTO di risposta
+        return memberships.stream()
+                .collect(Collectors.groupingBy(m -> m.getDepartment().getId()))
+                .entrySet()
+                .stream()
+                .map(entry -> {
+                    UUID departmentId = entry.getKey();
+                    // prendo il department da una delle membership del gruppo
+                    Department dept = entry.getValue().getFirst().getDepartment();
+
+                    // lista ruoli (senza duplicati) in questo department
+                    List<String> roles = entry.getValue().stream()
+                            .map(UserDepartmentRole::getRole)
+                            .distinct()
+                            .toList();
+
+                    return new UserDepartmentRolesViewDTO(
+                            departmentId,
+                            dept.getName(),
+                            roles
+                    );
+                })
+                .toList();
+    }
+
 }
