@@ -23,7 +23,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor // Lombok -> costruttore vuoto (necessario per JPA)
 
-@JsonIgnoreProperties({"password", "role", "accountNonLocked", "credentialsNonExpired",
+@JsonIgnoreProperties({"password", "accountNonLocked", "credentialsNonExpired",
         "accountNonExpired", "authorities", "enabled"})
 // Non include questi campi quando l'oggetto viene convertito in JSON
 // (es. per sicurezza non mostrare password e campi tecnici di Spring Security)

@@ -98,5 +98,15 @@ public class DepartmentMembershipController {
         return departmentMembershipService.countUsersByDepartmentAndRole(id, role);
     }
 
+    //Delete user from department
+    @DeleteMapping("/{departmentId}/members/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeUserFromDepartment(
+            @PathVariable UUID departmentId,
+            @PathVariable UUID userId
+    ) {
+        departmentMembershipService.removeUserFromDepartment(userId, departmentId);
+    }
+
 
 }

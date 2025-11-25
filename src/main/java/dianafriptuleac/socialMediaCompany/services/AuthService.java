@@ -49,7 +49,8 @@ public class AuthService {
                     userFound.getName(),
                     userFound.getSurname(),
                     userFound.getEmail(),
-                    userFound.getAvatar()
+                    userFound.getAvatar(),
+                    userFound.getRole()
             );
             // Restituisce un DTO (Data Transfer Object) con tutti i dati necessari
             // per il frontend dopo il login (incluso il token)

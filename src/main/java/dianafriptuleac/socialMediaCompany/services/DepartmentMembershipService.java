@@ -131,4 +131,16 @@ public class DepartmentMembershipService {
                 .toList();
     }
 
+    //Delete user from department
+    @Transactional
+    public void removeUserFromDepartment(UUID userId, UUID departmentId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("User not found!");
+        }
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new NotFoundException("Department not found!");
+        }
+        userDepartmentRoleRepository.deleteAllByUserIdAndDepartmentId(userId, departmentId);
+    }
+
 }
