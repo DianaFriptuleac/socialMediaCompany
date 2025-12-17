@@ -139,4 +139,10 @@ public class UserService {
         return response;
     }
 
+    // ------------------------ Upload user Role (solo per ADMIN)
+    public User updateUserRole(UUID userID, Role newRole) {
+        User foundUser = this.findById(userID);
+        foundUser.setRole(newRole);  // change role
+        return this.userRepository.save(foundUser);
+    }
 }

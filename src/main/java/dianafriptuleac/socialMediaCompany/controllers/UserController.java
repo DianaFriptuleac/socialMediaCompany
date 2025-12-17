@@ -4,6 +4,7 @@ import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.payloads.UserDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserDepartmentRolesViewDTO;
+import dianafriptuleac.socialMediaCompany.payloads.UserRoleUpdateDTO;
 import dianafriptuleac.socialMediaCompany.services.DepartmentMembershipService;
 import dianafriptuleac.socialMediaCompany.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,5 +90,14 @@ public class UserController {
         return departmentMembershipService.getDepartmentsForUser(currentAuthenticatedUser.getId());
     }
 
+    // Change user Role (solo per ADMIN)
+    @PatchMapping("/{userId}/role")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ResponseStatus(HttpStatus.OK)
+    public User updateUserRole(
+            @PathVariable UUID userId,
+            @RequestBody @Validated UserRoleUpdateDTO body) {
+        return userService.updateUserRole(userId, body.role());
+    }
 
 }
