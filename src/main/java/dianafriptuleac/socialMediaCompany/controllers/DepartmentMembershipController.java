@@ -108,5 +108,15 @@ public class DepartmentMembershipController {
         departmentMembershipService.removeUserFromDepartment(userId, departmentId);
     }
 
+    // Delete department role from user
+    @DeleteMapping("/{departmentId}/members/{userId}/roles/{role}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeDepartmentRoleFromUser(
+            @PathVariable UUID departmentId,
+            @PathVariable UUID userId,
+            @PathVariable String role
+    ) {
+        departmentMembershipService.removeDepartmentRoleFromUser(userId, departmentId, role);
+    }
 
 }

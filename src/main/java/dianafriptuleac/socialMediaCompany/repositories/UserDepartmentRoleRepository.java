@@ -15,6 +15,7 @@ public interface UserDepartmentRoleRepository extends JpaRepository<UserDepartme
 
     void deleteAllByUserIdAndDepartmentId(UUID userId, UUID departmentId);
 
+
     List<UserDepartmentRole> findByUserId(UUID userId);
 
     List<UserDepartmentRole> findByUserIdAndDepartmentId(UUID userId, UUID departmentId);

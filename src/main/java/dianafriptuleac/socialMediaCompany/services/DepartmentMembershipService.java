@@ -143,4 +143,24 @@ public class DepartmentMembershipService {
         userDepartmentRoleRepository.deleteAllByUserIdAndDepartmentId(userId, departmentId);
     }
 
+    // delete department role from user
+    @Transactional
+    public void removeDepartmentRoleFromUser(UUID userId, UUID departmentId, String role) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("User not found!");
+        }
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new NotFoundException("Department not found!");
+        }
+        if (role == null | role.isBlank()) {
+            throw new BadRequestException("Role is required");
+        }
+        String normalizedRole = role.trim().toUpperCase();
+
+        userDepartmentRoleRepository.deleteByUserIdAndDepartmentIdAndRole(
+                userId,
+                departmentId,
+                normalizedRole
+        );
+    }
 }
