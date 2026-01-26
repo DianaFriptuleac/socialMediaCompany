@@ -9,6 +9,7 @@ import dianafriptuleac.socialMediaCompany.payloads.DepartmentWithUserDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserWithRolesInDepartmentDTO;
 import dianafriptuleac.socialMediaCompany.services.DepartmentMembershipService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class DepartmentMembershipController {
 
     // Crea un nuovo reparto
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Department createDepartment(@RequestBody DepartmentCreateDTO dto) {
         return departmentMembershipService.createDepartment(dto);

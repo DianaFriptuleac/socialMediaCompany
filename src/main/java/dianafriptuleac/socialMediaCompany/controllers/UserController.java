@@ -31,7 +31,7 @@ public class UserController {
     private DepartmentMembershipService departmentMembershipService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    // @PreAuthorize("hasAuthority('ADMIN')")
     public Page<User> findAll(@RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "8") int size,
                               @RequestParam(defaultValue = "id") String sortBy) {
@@ -39,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('ADMIN')")
     public User findById(@PathVariable UUID userId) {
         return this.userService.findById(userId);
     }
