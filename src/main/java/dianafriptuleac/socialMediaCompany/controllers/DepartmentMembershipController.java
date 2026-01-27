@@ -3,10 +3,7 @@ package dianafriptuleac.socialMediaCompany.controllers;
 import dianafriptuleac.socialMediaCompany.entities.Department;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
-import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
-import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
-import dianafriptuleac.socialMediaCompany.payloads.DepartmentWithUserDTO;
-import dianafriptuleac.socialMediaCompany.payloads.UserWithRolesInDepartmentDTO;
+import dianafriptuleac.socialMediaCompany.payloads.*;
 import dianafriptuleac.socialMediaCompany.services.DepartmentMembershipService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -121,4 +118,24 @@ public class DepartmentMembershipController {
         departmentMembershipService.removeDepartmentRoleFromUser(userId, departmentId, role);
     }
 
+    // delete department
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteDepartment(
+            @PathVariable UUID id
+    ) {
+        departmentMembershipService.deleteDepartment(id);
+    }
+
+    // update deparment name and description
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @ResponseStatus(HttpStatus.OK)
+    public Department updateDepartment(
+            @PathVariable UUID id,
+            @RequestBody UpdateDepartmentDTO updateDepartmentDTO
+    ) {
+        return departmentMembershipService.updateDepartment(id, updateDepartmentDTO);
+    }
 }

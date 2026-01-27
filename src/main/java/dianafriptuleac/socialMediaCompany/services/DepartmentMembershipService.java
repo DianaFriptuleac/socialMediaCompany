@@ -7,6 +7,7 @@ import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
 import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
+import dianafriptuleac.socialMediaCompany.payloads.UpdateDepartmentDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserDepartmentRolesViewDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserDepartmentRoleRepository;
@@ -162,5 +163,44 @@ public class DepartmentMembershipService {
                 departmentId,
                 normalizedRole
         );
+    }
+
+    // delete department
+    @Transactional
+    public void deleteDepartment(UUID departmentId) {
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new NotFoundException("Department not found!");
+        }
+        // cancella le righe user_department_roles collegate
+        userDepartmentRoleRepository.deleteAllByDepartmentId(departmentId);
+
+        //candella il department
+        departmentRepository.deleteById(departmentId);
+    }
+
+    // Update department name and description
+    @Transactional
+    public Department updateDepartment(UUID departmentId, UpdateDepartmentDTO updateDepartmentDTO) {
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new NotFoundException("Department not found!"));
+        if (updateDepartmentDTO == null) throw new BadRequestException("Body is required!");
+        // update name
+        if (updateDepartmentDTO.name() != null && !updateDepartmentDTO.name().isBlank()) {
+            String normalizedName = updateDepartmentDTO.name().trim();
+
+
+            departmentRepository.findByNameIgnoreCase(normalizedName).ifPresent(existing -> {
+                if (!existing.getId().equals(departmentId)) {
+                    throw new BadRequestException("Department name already exists: " + normalizedName);
+                }
+            });
+            department.setName(normalizedName);
+        }
+
+        // update description
+        if (updateDepartmentDTO.description() != null) {
+            department.setDescription(updateDepartmentDTO.description().trim());
+        }
+        return departmentRepository.save(department);
     }
 }
