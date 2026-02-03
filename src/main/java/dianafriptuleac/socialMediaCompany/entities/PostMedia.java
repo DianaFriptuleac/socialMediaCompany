@@ -39,11 +39,13 @@ public class PostMedia {
         this.post = post;
         this.type = type;
         this.url = url;
-        this.name = name;
     }
 
 
     public PostMedia(Post post, MediaType type, String url) {
+        this.post = post;
+        this.type = type;
+        this.url = url;
     }
 }
 
