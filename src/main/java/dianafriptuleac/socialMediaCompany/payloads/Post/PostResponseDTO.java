@@ -15,6 +15,7 @@ public record PostResponseDTO(
         List<PostMediaDTO> media,
         long likeCount,
         long commentCount,
+        boolean likedByMe,
         Instant createdAt,
         Instant updatedAt
 ) {

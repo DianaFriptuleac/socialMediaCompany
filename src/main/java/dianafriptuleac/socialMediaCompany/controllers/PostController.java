@@ -6,6 +6,7 @@ import dianafriptuleac.socialMediaCompany.payloads.Post.PostCreateDTO;
 import dianafriptuleac.socialMediaCompany.payloads.Post.PostResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.Post.PostUpdateDTO;
 import dianafriptuleac.socialMediaCompany.services.PostService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +30,28 @@ public class PostController {
         this.postService = postService;     // salva il service dentro la classs
         this.objectMapper = objectMapper;   // salva ObjectMapper dentro la classe
     }
+
+
+    @GetMapping
+    public Page<PostResponseDTO> findAll(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy) {
+        return this.postService.findAll(page, size, sortBy, currentUser);
+    }
+
+    @GetMapping("/user/{userId}")
+    public Page<PostResponseDTO> findByUser(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy
+    ) {
+        return postService.findByAuthor(userId, page, size, sortBy, currentUser);
+    }
+
 
     // Endpoint POST su /posts/with-media
     // "consumes multipart/form-data" : questa rotta accetta form-data con file (upload)

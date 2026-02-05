@@ -8,8 +8,6 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -29,28 +27,25 @@ public class PostShare {
     private Post post;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "shared_by_id")
-    private User sharedBy;
+    @JoinColumn(name = "sender_id")
+    private User sender;
 
-    @ManyToMany
-    @JoinTable(
-            name = "post_share_recipients",
-            joinColumns = @JoinColumn(name = "share_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> recipients = new HashSet<>();
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id")
+    private User recipient;
 
-    // opzionale
     @Column(columnDefinition = "TEXT")
-    private String message;
+    private String message; // opzionale
 
     @CreationTimestamp
     private Instant createdAt;
 
-    public PostShare(Post post, User sharedBy, Set<User> recipients, String message) {
+    private Instant readAt; // (“letto/non letto”)
+
+    public PostShare(Post post, User sender, User recipient, String message) {
         this.post = post;
-        this.sharedBy = sharedBy;
-        this.recipients = recipients;
+        this.sender = sender;
+        this.recipient = recipient;
         this.message = message;
     }
 }
