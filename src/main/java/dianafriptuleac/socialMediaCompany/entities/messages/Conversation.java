@@ -24,4 +24,6 @@ public class Conversation {
 
     @CreationTimestamp
     private Instant createdAt;
+
+
 }
