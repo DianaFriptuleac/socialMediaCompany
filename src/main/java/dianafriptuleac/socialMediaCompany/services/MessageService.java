@@ -1,23 +1,21 @@
 package dianafriptuleac.socialMediaCompany.services;
 
+import com.cloudinary.Cloudinary;
 import dianafriptuleac.socialMediaCompany.entities.User;
-import dianafriptuleac.socialMediaCompany.entities.messages.Conversation;
-import dianafriptuleac.socialMediaCompany.entities.messages.ConversationParticipant;
-import dianafriptuleac.socialMediaCompany.entities.messages.Message;
-import dianafriptuleac.socialMediaCompany.entities.messages.MessageState;
+import dianafriptuleac.socialMediaCompany.entities.messages.*;
+import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
+import dianafriptuleac.socialMediaCompany.payloads.messages.AttachmentResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.messages.ConversationResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.messages.MessageResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.messages.SendMessageRequestDTO;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
-import dianafriptuleac.socialMediaCompany.repositories.messages.ConversationParticipantRepository;
-import dianafriptuleac.socialMediaCompany.repositories.messages.ConversationRepository;
-import dianafriptuleac.socialMediaCompany.repositories.messages.MessageRepository;
-import dianafriptuleac.socialMediaCompany.repositories.messages.MessageStateRepository;
+import dianafriptuleac.socialMediaCompany.repositories.messages.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,6 +40,10 @@ public class MessageService {
 
     @Autowired
     ConversationRepository conversationRepository;
+    @Autowired
+    MessageAttachmentRepository messageAttachmentRepository;
+    @Autowired
+    private Cloudinary cloudinary;
 
     //-------------------------------------- Conversation -------------------------------------------------
     @Transactional
@@ -76,7 +78,6 @@ public class MessageService {
         conversationParticipantRepository.save(cp);
     }
 
-
     //-------------------------------------- Messages -------------------------------------------------
     @Transactional
     public MessageResponseDTO send(UUID myId, SendMessageRequestDTO requestDTO) {
@@ -108,7 +109,8 @@ public class MessageService {
                 m.getText(),
                 m.getReplyTo() != null ? m.getReplyTo().getId() : null,
                 m.getCreatedAt(),
-                Instant.now() // readAt per me (sender)
+                Instant.now(), // readAt per me (sender),
+                List.of()
         );
 
     }
@@ -138,7 +140,8 @@ public class MessageService {
                         m.getCreatedAt(),
                         stateByMessageId.containsKey(m.getId())
                                 ? stateByMessageId.get(m.getId()).getReadAt()
-                                : null
+                                : null,
+                        List.of()
                 ))
                 .toList();
     }
@@ -160,4 +163,99 @@ public class MessageService {
             messageStateRepository.save(ms);
         }
     }
+
+    //-------------------------------------- Attachments -------------------------------------------------
+
+    @Transactional
+    public AttachmentResponseDTO uploadAttachment(UUID myId, UUID messageId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("Empty file");
+        }
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new NotFoundException("Message not found"));
+
+        UUID conversationId = message.getConversation().getId();
+
+        // solo i partecipanti possono allegare file
+        if (!conversationParticipantRepository.existsByConversationIdAndUserId(conversationId, myId)) {
+            throw new IllegalArgumentException("Not a participant");
+        }
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+        try {
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    Map.of(
+                            "folder", "chat_attachments",
+                            "resource_type", "auto"
+                    )
+            );
+            String publicId = (String) uploadResult.get("public_id");
+            String secureUrl = (String) uploadResult.get("secure_url");
+
+            MessageAttachment att = new MessageAttachment();
+            att.setMessage(message);
+            att.setFileName(fileName);
+            att.setContentType(contentType);
+            att.setSize(file.getSize());
+            att.setPublicId(publicId);
+            att.setSecureUrl(secureUrl);
+
+            messageAttachmentRepository.save(att);
+
+            return new AttachmentResponseDTO(
+                    att.getId(),
+                    att.getFileName(),
+                    att.getContentType(),
+                    att.getSize(),
+                    att.getSecureUrl(),
+                    att.getPublicId(),
+                    att.getCreatedAt()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Cloudinary upload failed", e);
+        }
+
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttachmentResponseDTO> listAttachmentsForMessage(UUID myId, UUID messageId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new NotFoundException("Message not found"));
+
+        UUID conversationId = message.getConversation().getId();
+        if (!conversationParticipantRepository.existsByConversationIdAndUserId(conversationId, myId)) {
+            throw new IllegalArgumentException("Not a participant");
+        }
+
+        // 1) se ho cancellato quel messaggio "per me", non devo vedere allegati
+        MessageState ms = messageStateRepository.findByMessageIdAndUserId(messageId, myId)
+                .orElseThrow(() -> new NotFoundException("State not found"));
+        if (ms.getDeletedAt() != null) {
+            throw new NotFoundException("Message not visible");
+        }
+
+        // 2) se ho fatto clear e il messaggio è precedente, non devo vedere allegati
+        ConversationParticipant cp = conversationParticipantRepository
+                .findByConversationIdAndUserId(conversationId, myId)
+                .orElseThrow(() -> new IllegalArgumentException("Not a participant"));
+
+        if (cp.getClearedAt() != null && message.getCreatedAt().isBefore(cp.getClearedAt())) {
+            throw new NotFoundException("Message not visible");
+        }
+
+        return messageAttachmentRepository.findAllByMessageId(messageId).stream()
+                .map(att -> new AttachmentResponseDTO(
+                        att.getId(),
+                        att.getFileName(),
+                        att.getContentType(),
+                        att.getSize(),
+                        att.getSecureUrl(),
+                        att.getPublicId(),
+                        att.getCreatedAt()
+                ))
+                .toList();
+    }
+
 }

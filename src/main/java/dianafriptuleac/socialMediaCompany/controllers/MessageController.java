@@ -1,15 +1,13 @@
 package dianafriptuleac.socialMediaCompany.controllers;
 
 import dianafriptuleac.socialMediaCompany.entities.User;
-import dianafriptuleac.socialMediaCompany.payloads.messages.ConversationResponseDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.CreateConversationRequestDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.MessageResponseDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.SendMessageRequestDTO;
+import dianafriptuleac.socialMediaCompany.payloads.messages.*;
 import dianafriptuleac.socialMediaCompany.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -70,6 +68,26 @@ public class MessageController {
     public void deleteForMe(@PathVariable UUID messageId, Authentication auth) {
         UUID myId = ((User) auth.getPrincipal()).getId();
         messageService.deleteMessageForMe(myId, messageId);
+    }
+
+    // ---------------- Attachments ----------------
+    // Upload allegato su un messaggio
+    @PostMapping("/{messageId}/attachments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AttachmentResponseDTO upload(@PathVariable UUID messageId,
+                                        @RequestParam("file") MultipartFile file,
+                                        Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.uploadAttachment(myId, messageId, file);
+    }
+
+    // Lista allegati di un messaggio (solo se il messaggio è "visibile" per me)
+    @GetMapping("/{messageId}/attachments")
+    @ResponseStatus(HttpStatus.OK)
+    public List<AttachmentResponseDTO> listByMessage(@PathVariable UUID messageId,
+                                                     Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.listAttachmentsForMessage(myId, messageId);
     }
 
 }

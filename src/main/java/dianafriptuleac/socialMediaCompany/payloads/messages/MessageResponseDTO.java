@@ -1,6 +1,7 @@
 package dianafriptuleac.socialMediaCompany.payloads.messages;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record MessageResponseDTO(
@@ -10,6 +11,7 @@ public record MessageResponseDTO(
         String text,
         UUID replyToId,
         Instant createdAt,
-        Instant readAt
+        Instant readAt,
+        List<AttachmentResponseDTO> attachments
 ) {
 }
