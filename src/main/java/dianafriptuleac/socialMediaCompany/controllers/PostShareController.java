@@ -1,6 +1,7 @@
 package dianafriptuleac.socialMediaCompany.controllers;
 
 import dianafriptuleac.socialMediaCompany.entities.User;
+import dianafriptuleac.socialMediaCompany.payloads.Post.PostResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.Post.PostShareResponseDTO;
 import dianafriptuleac.socialMediaCompany.payloads.Post.SharePostDTO;
 import dianafriptuleac.socialMediaCompany.services.PostService;
@@ -36,4 +37,13 @@ public class PostShareController {
     ) {
         return postService.inbox(currentUser, page, size);
     }
+
+    @GetMapping("/posts/{postId}")
+    public PostResponseDTO getById(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable UUID postId
+    ) {
+        return postService.findById(currentUser, postId);
+    }
+
 }

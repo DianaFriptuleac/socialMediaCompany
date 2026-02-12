@@ -402,5 +402,13 @@ public class PostService {
 
         return postShareRepository.findByRecipient_Id(currentUser.getId(), pageable).map(this::toShareDTO);
     }
+
+    @Transactional
+    public PostResponseDTO findById(User currentUser, UUID postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NotFoundException("Post not found"));
+        return toResponse(post, currentUser);
+    }
+
 }
 
