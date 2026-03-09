@@ -5,10 +5,7 @@ import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.entities.messages.*;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
-import dianafriptuleac.socialMediaCompany.payloads.messages.AttachmentResponseDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.ConversationResponseDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.MessageResponseDTO;
-import dianafriptuleac.socialMediaCompany.payloads.messages.SendMessageRequestDTO;
+import dianafriptuleac.socialMediaCompany.payloads.messages.*;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
 import dianafriptuleac.socialMediaCompany.repositories.messages.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -256,6 +253,109 @@ public class MessageService {
                         att.getCreatedAt()
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConversationListItemDTO> listMyConversations(UUID myId) {
+        List<ConversationParticipant> myParticipations = conversationParticipantRepository.findAllByUserId(myId);
+
+        return myParticipations.stream()
+                .map(cp -> {
+                    Conversation conversation = cp.getConversation();
+
+                    List<ConversationParticipant> participants =
+                            conversationParticipantRepository.findAllByConversationId(conversation.getId());
+
+                    ConversationParticipant otherParticipant = participants.stream()
+                            .filter(p -> !p.getUser().getId().equals(myId))
+                            .findFirst()
+                            .orElse(null);
+
+                    ConversationUserDTO otherUser = otherParticipant != null
+                            ? new ConversationUserDTO(
+                            otherParticipant.getUser().getId(),
+                            otherParticipant.getUser().getName(),
+                            otherParticipant.getUser().getSurname(),
+                            otherParticipant.getUser().getAvatar()
+                    )
+                            : null;
+
+                    List<Message> lastMessages;
+                    if (cp.getClearedAt() != null) {
+                        lastMessages = messageRepository.findLastVisibleMessagesAfterClear(
+                                conversation.getId(),
+                                myId,
+                                cp.getClearedAt(),
+                                PageRequest.of(0, 1)
+                        );
+                    } else {
+                        lastMessages = messageRepository.findLastVisibleMessages(
+                                conversation.getId(),
+                                myId,
+                                PageRequest.of(0, 1)
+                        );
+                    }
+
+                    Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
+
+                    long unreadCount;
+                    if (cp.getClearedAt() != null) {
+                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserIdAfterClear(
+                                conversation.getId(),
+                                myId,
+                                cp.getClearedAt()
+                        );
+                    } else {
+                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserId(
+                                conversation.getId(),
+                                myId
+                        );
+                    }
+
+                    return new ConversationListItemDTO(
+                            conversation.getId(),
+                            conversation.getCreatedAt(),
+                            otherUser,
+                            lastMessage != null ? lastMessage.getText() : null,
+                            lastMessage != null ? lastMessage.getSender().getId() : null,
+                            lastMessage != null ? lastMessage.getCreatedAt() : null,
+                            unreadCount
+                    );
+                })
+                .sorted((a, b) -> {
+                    Instant aTime = a.lastMessageCreatedAt() != null ? a.lastMessageCreatedAt() : a.createdAt();
+                    Instant bTime = b.lastMessageCreatedAt() != null ? b.lastMessageCreatedAt() : b.createdAt();
+                    return bTime.compareTo(aTime);
+                })
+                .toList();
+    }
+
+    // dettaglio conversazione
+    @Transactional(readOnly = true)
+    public ConversationDetailDTO getConversationDetail(UUID conversationId, UUID myId) {
+        if (!conversationParticipantRepository.existsByConversationIdAndUserId(conversationId, myId)) {
+            throw new IllegalArgumentException("Not a participant");
+        }
+
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new NotFoundException("Conversation not found"));
+
+        List<ConversationUserDTO> participants = conversationParticipantRepository
+                .findAllByConversationId(conversationId)
+                .stream()
+                .map(cp -> new ConversationUserDTO(
+                        cp.getUser().getId(),
+                        cp.getUser().getName(),
+                        cp.getUser().getSurname(),
+                        cp.getUser().getAvatar()
+                ))
+                .toList();
+
+        return new ConversationDetailDTO(
+                conversation.getId(),
+                conversation.getCreatedAt(),
+                participants
+        );
     }
 
 }

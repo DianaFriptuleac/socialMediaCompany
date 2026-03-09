@@ -26,4 +26,7 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
                 having count(cp.conversation.id) = 2
             """)
     List<UUID> findOneToOneConversationIds(UUID u1, UUID u2);
+
+    // tutte le conversazioni di un utente
+    List<ConversationParticipant> findAllByUserId(UUID userId);
 }

@@ -46,7 +46,8 @@ public class MessageController {
         return messageService.send(myId, req);
     }
 
-    @GetMapping("/conversation/{conversationId}")
+    // messaggi di una conversazione specifica
+    @GetMapping("/conversation/{conversationId}/messages")
     @ResponseStatus(HttpStatus.OK)
     public List<MessageResponseDTO> list(@PathVariable UUID conversationId,
                                          @RequestParam(defaultValue = "0") int page,
@@ -61,6 +62,23 @@ public class MessageController {
     public void read(@PathVariable UUID messageId, Authentication auth) {
         UUID myId = ((User) auth.getPrincipal()).getId();
         messageService.markAsRead(myId, messageId);
+    }
+
+    // lista conversazioni
+    @GetMapping("/conversations")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ConversationListItemDTO> listMyCoonversations(Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.listMyConversations(myId);
+    }
+
+    // dettagli conversazione (dettagli utente - nome, avatar...)
+    @GetMapping("/conversations/{conversationId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ConversationDetailDTO getConversation(@PathVariable UUID conversationId,
+                                                 Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.getConversationDetail(conversationId, myId);
     }
 
     @DeleteMapping("/{messageId}")
