@@ -67,12 +67,151 @@ public class MessageService {
 
     }
 
+
     @Transactional
     public void clearConversationForMe(UUID conversationId, UUID myId) {
         ConversationParticipant cp = conversationParticipantRepository.findByConversationIdAndUserId(conversationId, myId)
                 .orElseThrow(() -> new IllegalArgumentException("Not a participant"));
         cp.setClearedAt(Instant.now());
         conversationParticipantRepository.save(cp);
+    }
+
+
+    /// Lista delle conversazioni dell'utente, includendo:
+    /// utente con cui sta parlando, ultimo msg, data ultimo msg, nr. msg non letti,
+    /// ordinamento per conversazione più recente
+
+    @Transactional(readOnly = true)
+    public List<ConversationListItemDTO> listMyConversations(UUID myId) {
+        // Recupera tutte le partecipazioni dell'utente alle conversazioni
+        // (tutte le righe della tabella conversation_participant dove user_id = myId)
+        List<ConversationParticipant> myParticipations = conversationParticipantRepository.findAllByUserId(myId);
+
+        // Converte ogni partecipazione in un DTO per la lista conversazioni
+        return myParticipations.stream()
+                .map(cp -> {
+                    // Recupera la conversazione associata alla partecipazione
+                    Conversation conversation = cp.getConversation();
+
+                    // Recupera tutti i partecipanti della conversazione
+                    List<ConversationParticipant> participants =
+                            conversationParticipantRepository.findAllByConversationId(conversation.getId());
+
+                    // Cerca il partecipante che NON è l'utente corrente
+                    // (per ottenere l'altro utente nella chat privata)
+                    ConversationParticipant otherParticipant = participants.stream()
+                            .filter(p -> !p.getUser().getId().equals(myId)) // esclude me
+                            .findFirst() // prende il primo risultato
+                            .orElse(null);  // se non esiste - ritorna null
+
+                    // Costruisce il DTO dell'altro utente della conversazione
+                    ConversationUserDTO otherUser = otherParticipant != null
+                            ? new ConversationUserDTO(
+                            otherParticipant.getUser().getId(),
+                            otherParticipant.getUser().getName(),
+                            otherParticipant.getUser().getSurname(),
+                            otherParticipant.getUser().getAvatar()
+                    )
+                            : null;
+
+                    // Variabile che conterrà l'ultimo messaggio visibile
+                    List<Message> lastMessages;
+
+                    // Se la conversazione è stata "clearata" dall'utente
+                    if (cp.getClearedAt() != null) {
+
+                        // Recupera l'ultimo messaggio DOPO il momento di clear
+                        lastMessages = messageRepository.findLastVisibleMessagesAfterClear(
+                                conversation.getId(),  // id conversazione
+                                myId,  // utente corrente
+                                cp.getClearedAt(),  // timestamp di clear
+                                PageRequest.of(0, 1)  // prende solo 1 messaggio
+                        );
+                    } else {
+                        // Recupera l'ultimo messaggio visibile della conversazione
+                        lastMessages = messageRepository.findLastVisibleMessages(
+                                conversation.getId(),
+                                myId,
+                                PageRequest.of(0, 1)
+                        );
+                    }
+
+                    // Se la lista è vuota non esiste nessun messaggio
+                    Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
+
+                    // Variabile per il conteggio dei messaggi non letti
+                    long unreadCount;
+                    if (cp.getClearedAt() != null) {
+                        // Conta solo i messaggi non letti DOPO il clear
+                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserIdAfterClear(
+                                conversation.getId(),
+                                myId,
+                                cp.getClearedAt()
+                        );
+                    } else {
+                        // Conta tutti i messaggi non letti della conversazione
+                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserId(
+                                conversation.getId(),
+                                myId
+                        );
+                    }
+
+                    //DTO finale della conversazione
+                    return new ConversationListItemDTO(
+                            conversation.getId(),  // id conversazione
+                            conversation.getCreatedAt(),  // data creazione conversazione
+                            otherUser,  // utente con cui sto parlando
+                            lastMessage != null ? lastMessage.getText() : null,  // testo ultimo msg
+                            lastMessage != null ? lastMessage.getSender().getId() : null,  // id mittente ultimo msg
+                            lastMessage != null ? lastMessage.getCreatedAt() : null,  // data ultimo msg
+                            unreadCount  // nr. msg. non letti
+                    );
+                })
+                // Ordina le conversazioni per data dell'ultimo messaggio (decrescente)
+                .sorted((a, b) -> {
+                    // Se non esiste un messaggio usa la data di creazione della conversazione
+                    Instant aTime = a.lastMessageCreatedAt() != null ? a.lastMessageCreatedAt() : a.createdAt();
+                    Instant bTime = b.lastMessageCreatedAt() != null ? b.lastMessageCreatedAt() : b.createdAt();
+                    // Ordina dal più recente al più vecchio
+                    return bTime.compareTo(aTime);
+                })
+                .toList();   // Converte lo stream in lista
+    }
+
+
+    ///Restituisce il dettaglio di una singola conversazione, includendo:
+    /// id conversazione, data creazione, lista partecipanti
+    @Transactional(readOnly = true)
+    public ConversationDetailDTO getConversationDetail(UUID conversationId, UUID myId) {
+
+        // Verifica che l'utente sia un partecipante della conversazione
+        if (!conversationParticipantRepository.existsByConversationIdAndUserId(conversationId, myId)) {
+            throw new IllegalArgumentException("Not a participant");
+        }
+
+        // Recupera la conversazione dal database
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new NotFoundException("Conversation not found"));
+
+        // Recupera tutti i partecipanti della conversazione
+        List<ConversationUserDTO> participants = conversationParticipantRepository
+                .findAllByConversationId(conversationId)
+                // Converte ogni partecipante in DTO
+                .stream()
+                .map(cp -> new ConversationUserDTO(
+                        cp.getUser().getId(),
+                        cp.getUser().getName(),
+                        cp.getUser().getSurname(),
+                        cp.getUser().getAvatar()
+                ))
+                .toList();
+
+        // Costruisce il DTO di dettaglio conversazione
+        return new ConversationDetailDTO(
+                conversation.getId(),
+                conversation.getCreatedAt(),
+                participants
+        );
     }
 
     //-------------------------------------- Messages -------------------------------------------------
@@ -253,109 +392,6 @@ public class MessageService {
                         att.getCreatedAt()
                 ))
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<ConversationListItemDTO> listMyConversations(UUID myId) {
-        List<ConversationParticipant> myParticipations = conversationParticipantRepository.findAllByUserId(myId);
-
-        return myParticipations.stream()
-                .map(cp -> {
-                    Conversation conversation = cp.getConversation();
-
-                    List<ConversationParticipant> participants =
-                            conversationParticipantRepository.findAllByConversationId(conversation.getId());
-
-                    ConversationParticipant otherParticipant = participants.stream()
-                            .filter(p -> !p.getUser().getId().equals(myId))
-                            .findFirst()
-                            .orElse(null);
-
-                    ConversationUserDTO otherUser = otherParticipant != null
-                            ? new ConversationUserDTO(
-                            otherParticipant.getUser().getId(),
-                            otherParticipant.getUser().getName(),
-                            otherParticipant.getUser().getSurname(),
-                            otherParticipant.getUser().getAvatar()
-                    )
-                            : null;
-
-                    List<Message> lastMessages;
-                    if (cp.getClearedAt() != null) {
-                        lastMessages = messageRepository.findLastVisibleMessagesAfterClear(
-                                conversation.getId(),
-                                myId,
-                                cp.getClearedAt(),
-                                PageRequest.of(0, 1)
-                        );
-                    } else {
-                        lastMessages = messageRepository.findLastVisibleMessages(
-                                conversation.getId(),
-                                myId,
-                                PageRequest.of(0, 1)
-                        );
-                    }
-
-                    Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
-
-                    long unreadCount;
-                    if (cp.getClearedAt() != null) {
-                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserIdAfterClear(
-                                conversation.getId(),
-                                myId,
-                                cp.getClearedAt()
-                        );
-                    } else {
-                        unreadCount = messageStateRepository.countUnreadByConversationIdAndUserId(
-                                conversation.getId(),
-                                myId
-                        );
-                    }
-
-                    return new ConversationListItemDTO(
-                            conversation.getId(),
-                            conversation.getCreatedAt(),
-                            otherUser,
-                            lastMessage != null ? lastMessage.getText() : null,
-                            lastMessage != null ? lastMessage.getSender().getId() : null,
-                            lastMessage != null ? lastMessage.getCreatedAt() : null,
-                            unreadCount
-                    );
-                })
-                .sorted((a, b) -> {
-                    Instant aTime = a.lastMessageCreatedAt() != null ? a.lastMessageCreatedAt() : a.createdAt();
-                    Instant bTime = b.lastMessageCreatedAt() != null ? b.lastMessageCreatedAt() : b.createdAt();
-                    return bTime.compareTo(aTime);
-                })
-                .toList();
-    }
-
-    // dettaglio conversazione
-    @Transactional(readOnly = true)
-    public ConversationDetailDTO getConversationDetail(UUID conversationId, UUID myId) {
-        if (!conversationParticipantRepository.existsByConversationIdAndUserId(conversationId, myId)) {
-            throw new IllegalArgumentException("Not a participant");
-        }
-
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new NotFoundException("Conversation not found"));
-
-        List<ConversationUserDTO> participants = conversationParticipantRepository
-                .findAllByConversationId(conversationId)
-                .stream()
-                .map(cp -> new ConversationUserDTO(
-                        cp.getUser().getId(),
-                        cp.getUser().getName(),
-                        cp.getUser().getSurname(),
-                        cp.getUser().getAvatar()
-                ))
-                .toList();
-
-        return new ConversationDetailDTO(
-                conversation.getId(),
-                conversation.getCreatedAt(),
-                participants
-        );
     }
 
 }

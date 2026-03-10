@@ -36,6 +36,22 @@ public class MessageController {
         messageService.clearConversationForMe(conversationId, myId);
     }
 
+    // lista conversazioni
+    @GetMapping("/conversations")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ConversationListItemDTO> listMyCoonversations(Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.listMyConversations(myId);
+    }
+
+    // dettagli conversazione (dettagli utente - nome, avatar...)
+    @GetMapping("/conversations/{conversationId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ConversationDetailDTO getConversation(@PathVariable UUID conversationId,
+                                                 Authentication auth) {
+        UUID myId = ((User) auth.getPrincipal()).getId();
+        return messageService.getConversationDetail(conversationId, myId);
+    }
 
     // ---------------- Messages ----------------
     @PostMapping
@@ -64,22 +80,6 @@ public class MessageController {
         messageService.markAsRead(myId, messageId);
     }
 
-    // lista conversazioni
-    @GetMapping("/conversations")
-    @ResponseStatus(HttpStatus.OK)
-    public List<ConversationListItemDTO> listMyCoonversations(Authentication auth) {
-        UUID myId = ((User) auth.getPrincipal()).getId();
-        return messageService.listMyConversations(myId);
-    }
-
-    // dettagli conversazione (dettagli utente - nome, avatar...)
-    @GetMapping("/conversations/{conversationId}")
-    @ResponseStatus(HttpStatus.OK)
-    public ConversationDetailDTO getConversation(@PathVariable UUID conversationId,
-                                                 Authentication auth) {
-        UUID myId = ((User) auth.getPrincipal()).getId();
-        return messageService.getConversationDetail(conversationId, myId);
-    }
 
     @DeleteMapping("/{messageId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
