@@ -31,4 +31,15 @@ public interface UserDepartmentRoleRepository extends JpaRepository<UserDepartme
     long countUsersInDepartment(@Param("departmentId") UUID departmentId);
 
     long countByDepartmentIdAndRole(UUID departmentId, String role);
+
+    @Query("""
+            SELECT DISTINCT udr.user.id
+            FROM UserDepartmentRole udr
+            WHERE udr.department.id IN :departmentIds
+            """)
+        // DISTINCT evita duplicati (stesso utente in più dipartimenti)
+        // udr - tabella/entity UserDepartmentRole (alias: udr)
+
+
+    List<UUID> findDistinctUserIdsByDepartmentIds(List<UUID> departmentIds);
 }
