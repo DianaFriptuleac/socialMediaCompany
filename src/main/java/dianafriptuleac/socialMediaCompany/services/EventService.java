@@ -4,22 +4,26 @@ import dianafriptuleac.socialMediaCompany.entities.Department;
 import dianafriptuleac.socialMediaCompany.entities.Events.Event;
 import dianafriptuleac.socialMediaCompany.entities.Events.EventDepartment;
 import dianafriptuleac.socialMediaCompany.entities.Events.EventParticipant;
+import dianafriptuleac.socialMediaCompany.entities.Notification;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.enums.Events.EventAudienceType;
 import dianafriptuleac.socialMediaCompany.enums.Events.ParticipationStatus;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.Events.EventCreateDTO;
+import dianafriptuleac.socialMediaCompany.payloads.Events.EventParticipationResponseDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.Events.EventDepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.Events.EventParticipantRepository;
 import dianafriptuleac.socialMediaCompany.repositories.Events.EventRepository;
+import dianafriptuleac.socialMediaCompany.repositories.NotificationRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserDepartmentRoleRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +43,8 @@ public class EventService {
     private UserRepository userRepository;
     @Autowired
     private UserDepartmentRoleRepository userDepartmentRoleRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     @Transactional
     // se qualcosa fallisce - rollback automatico
@@ -131,13 +137,43 @@ public class EventService {
                                 dto.userIds() != null && dto.userIds().contains(user.getId())
                         )
                         .invitedThroughDepartment(
-                                dto.departmentIds() != null
+                                dto.departmentIds() != null && !dto.departmentIds().isEmpty()
                         )
                         .build())
                 .toList();
 
         eventParticipantRepository.saveAll(participants);
 
+        // Manda notifica evento allo user
+        List<Notification> notifications = users.stream()
+                .map(user -> Notification.builder()
+                        .user(user)
+                        .title("New Event")
+                        .message("You have been invited to the event: " + savedEvent.getName())
+                        .createdAt(LocalDateTime.now())
+                        .eventId(savedEvent.getId())
+                        .type("Event_Invitation")
+                        .build())
+                .toList();
+        notificationRepository.saveAll(notifications);
+
         return savedEvent;
+    }
+
+    @Transactional
+    public EventParticipationResponseDTO updateParticipation(UUID eventId, User user, ParticipationStatus status) {
+        if (status == ParticipationStatus.PENDING) {
+            throw new BadRequestException("Invalid participation status");
+        }
+        EventParticipant participant = eventParticipantRepository
+                .findByEventIdAndUserId(eventId, user.getId())
+                .orElseThrow(() -> new NotFoundException("Invitation not found for this user"));
+
+        participant.setStatus(status);
+        participant.setRespondedAt(java.time.LocalDateTime.now());
+
+        eventParticipantRepository.save(participant);
+
+        return new EventParticipationResponseDTO(participant.getStatus());
     }
 }
