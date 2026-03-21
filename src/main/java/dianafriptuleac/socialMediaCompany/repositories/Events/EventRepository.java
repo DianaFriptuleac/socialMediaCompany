@@ -5,7 +5,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public interface EventRepository extends JpaRepository<Event, UUID> {
@@ -16,6 +15,4 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     //@EntityGraph(attributePaths = {"createdBy"})
     Page<Event> findAllByOrderByStartAtDesc(Pageable pageable);
 
-    // @EntityGraph(attributePaths = {"createdBy"})
-    Optional<Event> findById(UUID id);
 }

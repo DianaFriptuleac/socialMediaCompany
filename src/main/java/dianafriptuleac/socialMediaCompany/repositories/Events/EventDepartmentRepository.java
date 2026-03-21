@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface EventDepartmentRepository extends JpaRepository<EventDepartment, UUID> {
     List<EventDepartment> findByEventId(UUID eventId);
+
+    void deleteByEventId(UUID eventId);
 }

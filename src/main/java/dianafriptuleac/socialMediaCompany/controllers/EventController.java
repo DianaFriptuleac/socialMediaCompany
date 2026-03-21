@@ -51,4 +51,13 @@ public class EventController {
         return eventService.updateParticipation(eventId, user, dto.status());
     }
 
+    // update evento
+    @PutMapping("/{eventId}")
+    public EventResponseDTO updateEvent(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid EventUpdateDTO dto,
+            @AuthenticationPrincipal User user
+    ) {
+        return eventService.updateEvent(eventId, dto, user);
+    }
 }
