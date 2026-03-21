@@ -1,4 +1,4 @@
-package dianafriptuleac.socialMediaCompany.repositories.Events;
+package dianafriptuleac.socialMediaCompany.payloads.Events;
 
 import dianafriptuleac.socialMediaCompany.enums.Events.EventAudienceType;
 import dianafriptuleac.socialMediaCompany.enums.Events.EventType;
@@ -6,15 +6,19 @@ import dianafriptuleac.socialMediaCompany.enums.Events.EventType;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record EventResponseDTO(
+public record EventListDTO(
         UUID id,
         String name,
         String location,
-        String description,
         LocalDateTime startAt,
         LocalDateTime endAt,
         EventType type,
         EventAudienceType audienceType,
-        UUID createdById
+        UUID createdBy,
+        String createdByName,
+        long totalInvited,
+        long acceptedCount,
+        long declinedCount,
+        long pendingCount
 ) {
 }
