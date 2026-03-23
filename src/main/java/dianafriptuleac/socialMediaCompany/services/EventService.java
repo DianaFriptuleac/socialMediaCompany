@@ -436,4 +436,32 @@ public class EventService {
                 event.getCreatedBy().getId()
         );
     }
+
+    // Delete event
+    @Transactional
+    public void delelteEvent(UUID eventId, User currentUser) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+        if (!event.getCreatedBy().getId().equals(currentUser.getId())) {
+            throw new BadRequestException("Only the creator can delete this event");
+        }
+        List<EventParticipant> participants = eventParticipantRepository.findByEventId(eventId);
+        List<User> usersToNotify = participants.stream()
+                .map(EventParticipant::getUser)
+                .toList();
+        if (!usersToNotify.isEmpty()) {
+            List<Notification> notifications = usersToNotify.stream()
+                    .map(user -> Notification.builder()
+                            .user(user)
+                            .title("Event Cancelled")
+                            .message("The event has been cancelled: " + event.getName())
+                            .createdAt(LocalDateTime.now())
+                            .eventId(event.getId())
+                            .type("EVENT_CANCELLED")
+                            .build())
+                    .toList();
+            notificationRepository.saveAll(notifications);
+        }
+        eventRepository.delete(event);
+    }
 }

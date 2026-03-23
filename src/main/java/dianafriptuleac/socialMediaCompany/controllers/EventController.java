@@ -60,4 +60,14 @@ public class EventController {
     ) {
         return eventService.updateEvent(eventId, dto, user);
     }
+
+    // delete event
+    @DeleteMapping("/{eventId}")
+    public void deleteEvent(
+            @PathVariable UUID eventId,
+            @AuthenticationPrincipal User user
+    ) {
+        eventService.delelteEvent(eventId, user);
+    }
+
 }
