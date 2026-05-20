@@ -22,7 +22,7 @@ public record EventDetailDTO(
         long acceptedCount,
         long declinedCount,
         long pendingCount,
-        List<String> departments,
+        List<EventDepartmentViewDTO> departments,
         List<EventParticipantViewDTO> participants
 ) {
 }

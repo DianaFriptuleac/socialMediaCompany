@@ -224,8 +224,11 @@ public class EventService {
                         p.getStatus()
                 ))
                 .toList();
-        List<String> departmentNames = departments.stream()
-                .map(ed -> ed.getDepartment().getName())
+        List<EventDepartmentViewDTO> departmentViewDTOS = departments.stream()
+                .map(ed -> new EventDepartmentViewDTO(
+                        ed.getDepartment().getId(),
+                        ed.getDepartment().getName())
+                )
                 .toList();
         long totalInvited = participants.size();
         long acceptedCount = participants.stream().filter(p -> p.getStatus() == ParticipationStatus.ACCEPTED).count();
@@ -247,7 +250,7 @@ public class EventService {
                 acceptedCount,
                 declinedCount,
                 pendingCount,
-                departmentNames,
+                departmentViewDTOS,
                 participantDtos
         );
     }
