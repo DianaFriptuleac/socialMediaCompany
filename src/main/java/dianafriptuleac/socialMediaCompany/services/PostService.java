@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -410,5 +411,34 @@ public class PostService {
         return toResponse(post, currentUser);
     }
 
+    //------------------------Mark as read ------------------------
+    @Transactional
+    public void markInboxItemAsRead(User currentUser, UUID shareId) {
+        PostShare share = postShareRepository.findById(shareId)
+                .orElseThrow(() -> new NotFoundException("Inbox item not found"));
+
+        if (!share.getRecipient().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You are not allowed to update this inbox item");
+        }
+
+        if (share.getReadAt() == null) {
+            share.setReadAt((Instant.now()));
+        }
+
+        postShareRepository.save(share);
+    }
+
+    //------------------------delete shared post ------------------------
+    @Transactional
+    public void deleteInboxItem(User currentUser, UUID shareId) {
+        PostShare share = postShareRepository.findById(shareId)
+                .orElseThrow(() -> new NotFoundException("Inbox item not found"));
+
+        if (!share.getRecipient().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You are not allowed to delete this inbox item");
+        }
+        postShareRepository.delete(share);
+
+    }
 }
 

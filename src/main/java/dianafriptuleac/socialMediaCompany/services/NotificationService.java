@@ -3,8 +3,10 @@ package dianafriptuleac.socialMediaCompany.services;
 import dianafriptuleac.socialMediaCompany.entities.Notification;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
+import dianafriptuleac.socialMediaCompany.exceptions.UnauthorizedException;
 import dianafriptuleac.socialMediaCompany.payloads.NotificationDTO;
 import dianafriptuleac.socialMediaCompany.repositories.NotificationRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,5 +41,15 @@ public class NotificationService {
         }
         notification.setRead(true);
         notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void deleteNotification(UUID notificationId, User user) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotFoundException("Notification not found"));
+        if (!notification.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedException("You are not allowed to delete this notification");
+        }
+        notificationRepository.delete(notification);
     }
 }

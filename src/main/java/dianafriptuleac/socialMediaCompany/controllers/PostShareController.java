@@ -46,4 +46,13 @@ public class PostShareController {
         return postService.findById(currentUser, postId);
     }
 
+    @DeleteMapping("/me/inbox/{shareId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteInboxItem(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable UUID shareId
+    ) {
+        postService.deleteInboxItem(currentUser, shareId);
+    }
+
 }

@@ -403,7 +403,7 @@ public class EventService {
                             .message("You have been invited to the event: " + event.getName())
                             .createdAt(LocalDateTime.now())
                             .eventId(event.getId())
-                            .type("EVENT_INVITATION")
+                            .type("Event_Invitation")
                             .build())
                     .toList();
 
@@ -465,6 +465,7 @@ public class EventService {
                     .toList();
             notificationRepository.saveAll(notifications);
         }
+        notificationRepository.deleteByEventId(eventId);
         eventRepository.delete(event);
     }
 }

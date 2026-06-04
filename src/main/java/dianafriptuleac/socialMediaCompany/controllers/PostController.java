@@ -133,4 +133,15 @@ public class PostController {
     ) {
         postService.deletePost(currentUser, postId);
     }
+
+    //-------Mark as read
+    @PatchMapping("/me/inbox/{shareId}/read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markItemAsRead(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable UUID shareId
+    ) {
+        postService.markInboxItemAsRead(currentUser, shareId);
+    }
+
 }

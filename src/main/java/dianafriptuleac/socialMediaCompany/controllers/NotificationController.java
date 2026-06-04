@@ -4,10 +4,12 @@ import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.payloads.NotificationDTO;
 import dianafriptuleac.socialMediaCompany.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/notifications")
@@ -24,5 +26,14 @@ public class NotificationController {
     public void markAsRead(@PathVariable java.util.UUID notificationId,
                            @AuthenticationPrincipal User user) {
         notificationService.markAsRead(notificationId, user);
+    }
+
+    @DeleteMapping("/{notificationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteNotification(
+            @PathVariable UUID notificationId,
+            @AuthenticationPrincipal User user
+    ) {
+        notificationService.deleteNotification(notificationId, user);
     }
 }
