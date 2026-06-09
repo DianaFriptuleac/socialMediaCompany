@@ -40,7 +40,7 @@ public class AuthService {
             //  - userFound.getPassword() → password hashata nel database
             //  Se coincidono, l’utente è autenticato
 
-            String accessToken = jwt.createToken(userFound);
+            String accessToken = jwt.createToken(userFound, Boolean.TRUE.equals(body.rememberMe()));
             // Crea un token JWT contenente l’ID e il ruolo dell’utente che servirà per accedere alle rotte protette
 
             return new UserLoginResponseDTO(

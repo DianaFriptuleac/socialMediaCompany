@@ -11,6 +11,7 @@ public record UserLoginDTO(
 
         @NotEmpty(message = "Password is required")
         @Size(min = 4, message = "Password must be at least 4 characters long")
-        String password
+        String password,
+        Boolean rememberMe
 ) {
 }

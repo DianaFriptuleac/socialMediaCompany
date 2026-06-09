@@ -22,10 +22,13 @@ public class JWT {
     private String secret;
 
     // CREA UN TOKEN JWT
-    public String createToken(User user) {
+    public String createToken(User user, boolean rememberMe) {
+        long expirationMs = rememberMe
+                ? 1000L * 60 * 60 * 24 * 30
+                : 1000L * 60 * 60 * 24 * 7;  // la scadenza: in questo caso 7 giorni dopo l’emissione
         return Jwts.builder()   // Crea un nuovo builder per costruire il token JWT
                 .issuedAt(new Date(System.currentTimeMillis()))  //data di emissione del token (momento attuale)
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))  // la scadenza: in questo caso 7 giorni dopo l’emissione
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .subject(String.valueOf(user.getId())) //“subject” del token - l’ID dell’utente (usato per riconoscerlo)
                 .claim("role", user.getRole())  //Aggiunge un “claim” al token - ruolo dell’utente (USER, ADMIN)
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
