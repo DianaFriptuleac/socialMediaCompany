@@ -86,14 +86,17 @@ public class AuthService {
 
         // Cancella eventuali token vecchi già creati per questo utente
         // Così rimane valido solo l'ultimo link di reset password
-        passwordResetTokenRepository.deleteByUser(user);
+
+        // Cerca un eventuale token già associato all'utente
+        // Se esiste lo aggiorneremo
+        // Se non esiste ne verrà creato uno nuovo
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByUser(user)
+                .orElseGet(PasswordResetToken::new);
 
         // Crea un token casuale unico
         // Sarà il codice segreto dentro il link di reset
         String token = UUID.randomUUID().toString();
 
-        //Nuovo oggetto salvato nella tabella password_reset
-        PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setToken(token);
 
         // Collego il token all'utente che ha chiesto il reset password
@@ -109,7 +112,7 @@ public class AuthService {
         // Creo il link che l'utente riceverà via email
         // Il frontend leggerà il token dalla query string:
         // /reset-password?token=...
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        String resetLink = "http://localhost:5173/reset_password?token=" + token;
 
         // Manda la mail all'utente con il link per cambiare password
         emailSevice.sendPasswordResetEmail(user.getEmail(), resetLink);
@@ -141,8 +144,9 @@ public class AuthService {
         // Salva l'utente aggiornato nel database con la nuova password criptata
         userService.saveEntity(user);
 
-        // Cancella il token dopo aver cambiato la password
-        // Così lo stesso link non può essere usato due volte
+        // Il token viene eliminato dopo il cambio password
+        // In questo modo il link di reset può essere usato una sola volta
+        // e non può essere riutilizzato in futuro per motivi di sicurezza
         passwordResetTokenRepository.delete(resetToken);
 
     }
