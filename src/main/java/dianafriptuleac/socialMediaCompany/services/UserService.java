@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -144,5 +145,15 @@ public class UserService {
         User foundUser = this.findById(userID);
         foundUser.setRole(newRole);  // change role
         return this.userRepository.save(foundUser);
+    }
+
+    // ------------------------ Save existing user entity
+    public void saveEntity(User user) {
+        this.userRepository.save(user);
+    }
+
+    // ------------------------ Find optional user by email - serve poi per AuthService x forgot password
+    public Optional<User> findOptionalByEmail(String email) {
+        return this.userRepository.findByEmail(email);
     }
 }

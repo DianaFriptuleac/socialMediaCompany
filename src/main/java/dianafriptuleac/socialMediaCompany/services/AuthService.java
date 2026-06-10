@@ -1,13 +1,22 @@
 package dianafriptuleac.socialMediaCompany.services;
 
+import dianafriptuleac.socialMediaCompany.entities.PasswordResetToken;
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.UnauthorizedException;
+import dianafriptuleac.socialMediaCompany.payloads.ForgotPasswordDTO;
+import dianafriptuleac.socialMediaCompany.payloads.ResetPasswordDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserLoginDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserLoginResponseDTO;
+import dianafriptuleac.socialMediaCompany.repositories.PasswordResetTokenRepository;
 import dianafriptuleac.socialMediaCompany.tools.JWT;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 
 @Service  // componente della logica di business
@@ -23,6 +32,12 @@ public class AuthService {
     private PasswordEncoder bcrypt;
     // PasswordEncoder configurato (BCrypt, definito in SecurityConfig)
     // per confrontare la password in chiaro con quella hashata nel database
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private EmailSevice emailSevice;
 
     public UserLoginResponseDTO checkAllCredentialsAndToken(UserLoginDTO body) {
         //  Metodo principale che:
@@ -57,5 +72,78 @@ public class AuthService {
         } else {
             throw new UnauthorizedException("Incorrect user credentials.");
         }
+    }
+
+    @Transactional
+    public void forgotPassword(ForgotPasswordDTO body) {
+        // Cerca utente tramite email
+        Optional<User> userOptional = userService.findOptionalByEmail(body.email());
+        if (userOptional.isEmpty()) {
+            return;
+        }
+
+        User user = userOptional.get();  // get user
+
+        // Cancella eventuali token vecchi già creati per questo utente
+        // Così rimane valido solo l'ultimo link di reset password
+        passwordResetTokenRepository.deleteByUser(user);
+
+        // Crea un token casuale unico
+        // Sarà il codice segreto dentro il link di reset
+        String token = UUID.randomUUID().toString();
+
+        //Nuovo oggetto salvato nella tabella password_reset
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setToken(token);
+
+        // Collego il token all'utente che ha chiesto il reset password
+        resetToken.setUser(user);
+
+        // Imposta la scadenza del token tra 30 minuti
+        // Dopo 30 minuti il link non sarà più valido
+        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+
+        // Salva token nel DB
+        passwordResetTokenRepository.save(resetToken);
+
+        // Creo il link che l'utente riceverà via email
+        // Il frontend leggerà il token dalla query string:
+        // /reset-password?token=...
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+
+        // Manda la mail all'utente con il link per cambiare password
+        emailSevice.sendPasswordResetEmail(user.getEmail(), resetLink);
+
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordDTO body) {
+
+        // Cerca nella tabella password_reset il token ricevuto dal frontend
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(body.token())
+                .orElseThrow(() -> new RuntimeException("Invalid reset token"));
+
+        // Controlla se il token è scaduto
+        // Se expiresAt è prima dell'orario attuale, significa che è scaduto
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            // Cancella il token scaduto dal database e blocca il reset password
+            passwordResetTokenRepository.delete(resetToken);
+            throw new RuntimeException("Reset token expired");
+        }
+
+        // recupera utente collegato a quel token
+        User user = resetToken.getUser();
+
+        // Cripta la nuova password con BCrypt
+        user.setPassword(bcrypt.encode(body.newPassword()));
+
+        // Salva l'utente aggiornato nel database con la nuova password criptata
+        userService.saveEntity(user);
+
+        // Cancella il token dopo aver cambiato la password
+        // Così lo stesso link non può essere usato due volte
+        passwordResetTokenRepository.delete(resetToken);
+
     }
 }

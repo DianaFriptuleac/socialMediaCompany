@@ -2,9 +2,7 @@ package dianafriptuleac.socialMediaCompany.controllers;
 
 import dianafriptuleac.socialMediaCompany.entities.User;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
-import dianafriptuleac.socialMediaCompany.payloads.UserDTO;
-import dianafriptuleac.socialMediaCompany.payloads.UserLoginDTO;
-import dianafriptuleac.socialMediaCompany.payloads.UserLoginResponseDTO;
+import dianafriptuleac.socialMediaCompany.payloads.*;
 import dianafriptuleac.socialMediaCompany.services.AuthService;
 import dianafriptuleac.socialMediaCompany.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,5 +54,23 @@ public class AuthController {
         return this.authService.checkAllCredentialsAndToken(body);
         // Restituisce un oggetto `UserLoginResponseDTO` contenente: il token JWT e
         // i dati essenziali dell’utente (id, nome, cognome, email, avatar)
+    }
+
+    //FORGOT PASSWORD
+    @PostMapping("/forgot_password")
+    @ResponseStatus(HttpStatus.OK)
+    public void forgotPassword(
+            @RequestBody @Validated ForgotPasswordDTO body
+    ) {
+        authService.forgotPassword(body);
+    }
+
+    // RESET PASSWORD
+    @PostMapping("/reset_password")
+    @ResponseStatus(HttpStatus.OK)
+    public void resetPassword(
+            @RequestBody @Validated ResetPasswordDTO body
+    ) {
+        authService.resetPassword(body);
     }
 }
