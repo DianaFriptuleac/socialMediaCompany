@@ -114,6 +114,8 @@ public class AuthService {
         // /reset-password?token=...
         String resetLink = "http://localhost:5173/reset_password?token=" + token;
 
+        /// !!!!!!!!da modificare con https al deploy
+
         // Manda la mail all'utente con il link per cambiare password
         emailSevice.sendPasswordResetEmail(user.getEmail(), resetLink);
 
