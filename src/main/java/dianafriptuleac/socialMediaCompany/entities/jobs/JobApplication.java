@@ -38,7 +38,15 @@ public class JobApplication {
 
     private String cvUrl;
     private String cvPublicId;
-    private String coverLetter;
+
+    @Column(columnDefinition = "TEXT")
+    private String coverLetterText;
+
+    // URL della cover letter se caricata come file
+    private String coverLetterUrl;
+
+    // Public ID Cloudinary della cover letter
+    private String coverLetterPublicId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
