@@ -26,7 +26,7 @@ public class JobOpening {
     private UUID id;
 
     private String title;
-    private String desctription;
+    private String description;
     private String requirements;
     private String location;
 
@@ -50,6 +50,6 @@ public class JobOpening {
     private User createdBy;
 
     private LocalDateTime createdAt;
-    
+
 
 }

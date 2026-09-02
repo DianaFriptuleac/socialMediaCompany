@@ -43,7 +43,7 @@ public class JobOpeningService {
         // Crea nuova posizione
         JobOpening job = JobOpening.builder()
                 .title(dto.title().trim())
-                .desctription(dto.description().trim())
+                .description(dto.description().trim())
                 .requirements(dto.requirements())
                 .location(dto.location())
                 .employmentType(dto.employmentType())
@@ -88,7 +88,7 @@ public class JobOpeningService {
             job.setTitle(dto.title().trim());
         }
         if (dto.description() != null && !dto.description().isBlank()) {
-            job.setDesctription(dto.description().trim());
+            job.setDescription(dto.description().trim());
         }
         if (dto.requirements() != null) {
             job.setRequirements(dto.requirements());
