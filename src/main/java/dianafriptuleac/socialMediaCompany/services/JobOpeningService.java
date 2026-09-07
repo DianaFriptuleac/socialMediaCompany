@@ -12,6 +12,7 @@ import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.jobs.JobOpeningRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,10 @@ public class JobOpeningService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    @Lazy
+    private JobApplicationService jobApplicationService;
 
     //---------- Create job
     public JobOpening createJob(JobCreateDTO dto, User creator) {
@@ -134,6 +139,8 @@ public class JobOpeningService {
     @Transactional
     public void deleteJob(UUID jobId) {
         JobOpening job = getJobById(jobId);
+
+        jobApplicationService.deleteApplicationsForJob(job);
 
         jobOpeningRepository.delete(job);
     }

@@ -210,4 +210,11 @@ public class JobApplicationService {
         );
         return jobApplicationRepository.save(application);
     }
+
+    // ---------------- delete all applications for a job
+    @Transactional
+    public void deleteApplicationsForJob(JobOpening job) {
+
+        jobApplicationRepository.deleteByJob(job);
+    }
 }

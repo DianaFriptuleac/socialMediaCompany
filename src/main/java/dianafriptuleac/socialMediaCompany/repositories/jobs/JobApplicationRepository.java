@@ -19,4 +19,6 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     Page<JobApplication> findByJob(JobOpening job, Pageable pageable);
 
     long countByJob(JobOpening job);
+
+    void deleteByJob(JobOpening job);
 }
