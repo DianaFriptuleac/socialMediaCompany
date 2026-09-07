@@ -72,7 +72,7 @@ public class JobApplicationService {
                 // Crea una Map con le opzioni da passare a Cloudinary
                 ObjectUtils.asMap
                         // Dice a Cloudinary che il file è un documento/file generico e non un'immagine (pdf)
-                                ("resource_type", "raw",
+                                ("resource_type", "image",
                                         //cartella di Cloudinary dove salvare il CV
                                         "folder", "job_applications/cv"
                                 )
@@ -99,7 +99,7 @@ public class JobApplicationService {
             }
             Map coverUpload = cloudinary.uploader().upload(
                     coverLetterFile.getBytes(), ObjectUtils.asMap(
-                            "resource_type", "raw",
+                            "resource_type", "image",
                             "folder",
                             "job_applications/cover_letters"
                     )
