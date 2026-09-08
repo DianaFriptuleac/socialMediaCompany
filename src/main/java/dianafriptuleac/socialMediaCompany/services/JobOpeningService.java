@@ -131,7 +131,12 @@ public class JobOpeningService {
             throw new BadRequestException("This job is already closed");
         }
         job.setStatus(JobStatus.CLOSED);
-        return jobOpeningRepository.save(job);
+        // salvo
+        JobOpening savedJob = jobOpeningRepository.save(job);
+
+        // notifica per i candidati
+        jobApplicationService.notifyApplicantsJobClosed(savedJob);
+        return savedJob;
     }
 
 
@@ -139,6 +144,8 @@ public class JobOpeningService {
     @Transactional
     public void deleteJob(UUID jobId) {
         JobOpening job = getJobById(jobId);
+        // notifica
+        jobApplicationService.notifyApplicantsJobDeleted(job);
 
         jobApplicationService.deleteApplicationsForJob(job);
 

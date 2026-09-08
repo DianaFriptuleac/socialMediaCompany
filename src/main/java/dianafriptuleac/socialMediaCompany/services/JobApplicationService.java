@@ -36,6 +36,9 @@ public class JobApplicationService {
     @Autowired
     private Cloudinary cloudinary;
 
+    @Autowired
+    private NotificationService notificationService;
+
     // --------- Candidatura
     @Transactional
     public JobApplication applyToJob(
@@ -166,15 +169,29 @@ public class JobApplicationService {
     // ------------ change application status (admin)
     @Transactional
     public JobApplication updateApplicationStatus(UUID applicationId, ApplicationStatus newStatus) {
+        // Cerca la candidatura
         JobApplication application = jobApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Job application not found."));
 
-        // un candidato ritirato non dovrebbe essere riattuvato
+        // un candidato ritirato non dovrebbe essere riattivato
         if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
             throw new BadRequestException("A withdrawn application cannot be updated");
         }
+        // salvo il vecchio stato
+        ApplicationStatus oldStatus = application.getStatus();
+        // evito di creare una notifica se Admin seleziona lo stesso stato
+        if (oldStatus == newStatus) {
+            return application;
+        }
+        // cambio stato
         application.setStatus(newStatus);
-        return jobApplicationRepository.save(application);
+
+        // salvo la candidatura aggiornata
+        JobApplication savedApplication = jobApplicationRepository.save(application);
+
+        // creo la notifica per candidato
+        createApplicationStatusNotification(savedApplication, newStatus);
+        return savedApplication;
     }
 
     // --------------- ritirare la candidatura
@@ -246,5 +263,72 @@ public class JobApplicationService {
             }
         }
         jobApplicationRepository.deleteAll(applications);
+    }
+
+    // --------create notification when application status changes
+    private void createApplicationStatusNotification(
+            JobApplication application, ApplicationStatus newStatus
+    ) {
+        String jobTitle = application.getJob().getTitle();
+        String title;
+        String message;
+
+        switch (newStatus) {
+            case UNDER_REVIEW -> {
+                title = "Application under review";
+                message = "Your application for " + jobTitle + " is now under review.";
+            }
+            case INTERVIEW -> {
+                title = "Interview";
+                message = "You have been selected for an interview for " + jobTitle + " .";
+            }
+            case ACCEPTED -> {
+                title = "Application accepted";
+                message = "Your application for " + jobTitle + " has been accepted.";
+            }
+            case REJECTED -> {
+                title = "Application rejected";
+                message = "Your application for " + jobTitle + " has been rejected.";
+            }
+            default -> {
+                title = "Application updated";
+                message = "The status of your application for " + jobTitle + " has changed.";
+            }
+        }
+        notificationService.createNotification(application.getApplicant(), title, message, application.getJob().getId(),
+                "JOB_APPLICATION_STATUS");
+    }
+
+    // ------------- notify applicants when job closes
+    public void notifyApplicantsJobClosed(JobOpening job) {
+        List<JobApplication> applications = jobApplicationRepository.findAllByJob(job);
+
+        for (JobApplication application : applications) {
+            // se la candidatura e stata ritirata - niente notifica
+            if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+                continue;
+            }
+            notificationService.createNotification(application.getApplicant(),
+                    "Job position closed",
+                    "The position " + job.getTitle() + " is no longer available.",
+                    job.getId(),
+                    "JOB_CLOSED");
+        }
+    }
+
+    // ------------- notify applicants when job deleted
+    public void notifyApplicantsJobDeleted(JobOpening job) {
+        List<JobApplication> applications = jobApplicationRepository.findAllByJob(job);
+
+        for (JobApplication application : applications) {
+            if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+                continue;
+            }
+            notificationService.createNotification(application.getApplicant(),
+                    "Job position deleted",
+                    "The position " + job.getTitle() + " has been removed.",
+                    job.getId(),
+                    "JOB_DELETED");
+        }
     }
 }

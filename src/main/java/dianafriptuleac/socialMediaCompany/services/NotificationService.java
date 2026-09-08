@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,5 +52,20 @@ public class NotificationService {
             throw new UnauthorizedException("You are not allowed to delete this notification");
         }
         notificationRepository.delete(notification);
+    }
+
+    // --------- crea notifica
+    public Notification createNotification(User user, String title, String message, UUID referenceId, String type) {
+        Notification notification = Notification.builder()
+                .user(user)
+                .title(title)
+                .message(message)
+                .read(false)
+                .createdAt(LocalDateTime.now())
+                // eventId ora si riferisce anche alla notifica dei jobs
+                .eventId(referenceId)
+                .type(type)
+                .build();
+        return notificationRepository.save(notification);
     }
 }
