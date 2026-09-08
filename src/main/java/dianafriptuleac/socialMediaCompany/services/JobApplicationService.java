@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -215,6 +216,35 @@ public class JobApplicationService {
     @Transactional
     public void deleteApplicationsForJob(JobOpening job) {
 
-        jobApplicationRepository.deleteByJob(job);
+        // candidature di quel job
+        List<JobApplication> applications = jobApplicationRepository.findAllByJob(job);
+
+        for (JobApplication application : applications) {
+            try {
+                //elimina cv da cloudinary
+                if (application.getCvPublicId() != null) {
+                    cloudinary.uploader().destroy(
+                            application.getCvPublicId(),
+                            ObjectUtils.asMap(
+                                    "resource_type",
+                                    "image"
+                            )
+                    );
+                }
+                // elimina cover letter da Cloudinary
+                if (application.getCoverLetterPublicId() != null) {
+                    cloudinary.uploader().destroy(
+                            application.getCoverLetterPublicId(),
+                            ObjectUtils.asMap(
+                                    "resource_type",
+                                    "image"
+                            )
+                    );
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Error deleting application files", e);
+            }
+        }
+        jobApplicationRepository.deleteAll(applications);
     }
 }

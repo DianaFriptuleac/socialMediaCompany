@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface JobApplicationRepository extends JpaRepository<JobApplication, UUID> {
@@ -21,4 +22,6 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     long countByJob(JobOpening job);
 
     void deleteByJob(JobOpening job);
+
+    List<JobApplication> findAllByJob(JobOpening job);
 }
