@@ -186,7 +186,8 @@ public class EventService {
     // Lista events
     @Transactional(readOnly = true)
     public Page<EventListDTO> getAllEvents(Pageable pageable) {
-        Page<Event> eventsPage = eventRepository.findAllByOrderByStartAtDesc(pageable);
+        Page<Event> eventsPage = eventRepository.findByEndAtGreaterThanEqualOrderByStartAtAsc
+                (LocalDateTime.now(), pageable);
 
         return eventsPage
                 .map(event -> new EventListDTO(
@@ -467,5 +468,13 @@ public class EventService {
         }
         notificationRepository.deleteByEventId(eventId);
         eventRepository.delete(event);
+    }
+
+    public boolean isEventAvailable(UUID eventId) {
+        return eventRepository.findById(eventId)
+                .map(event -> event.getEndAt() != null &&
+                        // l'evento non ancora terminato
+                        !event.getEndAt().isBefore(LocalDateTime.now()))
+                .orElse(false);
     }
 }

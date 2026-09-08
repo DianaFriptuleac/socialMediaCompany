@@ -65,8 +65,8 @@ public class JobOpeningService {
 
     //------------- get open jobs
     public Page<JobOpening> getOpenJobs(Pageable pageable) {
-        return jobOpeningRepository.findByStatus(
-                JobStatus.OPEN, pageable
+        return jobOpeningRepository.findVisibleJobs(
+                JobStatus.OPEN, LocalDate.now(), pageable
         );
     }
 
@@ -151,5 +151,6 @@ public class JobOpeningService {
 
         jobOpeningRepository.delete(job);
     }
+
 
 }

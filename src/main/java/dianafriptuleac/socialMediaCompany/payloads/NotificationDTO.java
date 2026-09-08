@@ -10,6 +10,7 @@ public record NotificationDTO(
         boolean read,
         LocalDateTime createdAt,
         UUID eventId,
-        String type
+        String type,
+        boolean targetAvailable
 ) {
 }

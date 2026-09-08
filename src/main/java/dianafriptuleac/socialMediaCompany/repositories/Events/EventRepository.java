@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface EventRepository extends JpaRepository<Event, UUID> {
@@ -14,5 +15,10 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
 
     //@EntityGraph(attributePaths = {"createdBy"})
     Page<Event> findAllByOrderByStartAtDesc(Pageable pageable);
+
+    Page<Event> findByEndAtGreaterThanEqualOrderByStartAtAsc(
+            LocalDateTime now,
+            Pageable pageable
+    );
 
 }

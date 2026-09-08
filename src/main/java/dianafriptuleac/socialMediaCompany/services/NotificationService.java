@@ -19,18 +19,13 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private EventService eventService;
+
     public List<NotificationDTO> getMyNotifications(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
-                .map(notification -> new NotificationDTO(
-                        notification.getId(),
-                        notification.getTitle(),
-                        notification.getMessage(),
-                        notification.isRead(),
-                        notification.getCreatedAt(),
-                        notification.getEventId(),
-                        notification.getType()
-                ))
+                .map(this::mapToDTO)
                 .toList();
     }
 
@@ -67,5 +62,29 @@ public class NotificationService {
                 .type(type)
                 .build();
         return notificationRepository.save(notification);
+    }
+
+    private NotificationDTO mapToDTO(Notification notification) {
+
+        boolean targetAvailable = true;
+        boolean isEventNotification = notification.getType() != null
+                && (
+                notification.getType().startsWith("EVENT_")
+                        || notification.getType().startsWith("Event_")
+        );
+
+        if (isEventNotification && notification.getEventId() != null) {
+            targetAvailable = eventService.isEventAvailable(notification.getEventId());
+        }
+        return new NotificationDTO(
+                notification.getId(),
+                notification.getTitle(),
+                notification.getMessage(),
+                notification.isRead(),
+                notification.getCreatedAt(),
+                notification.getEventId(),
+                notification.getType(),
+                targetAvailable
+        );
     }
 }
