@@ -11,6 +11,7 @@ import dianafriptuleac.socialMediaCompany.enums.Events.ParticipationStatus;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.Events.*;
+import dianafriptuleac.socialMediaCompany.payloads.search.EventSearchDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.Events.EventDepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.Events.EventParticipantRepository;
@@ -476,5 +477,18 @@ public class EventService {
                         // l'evento non ancora terminato
                         !event.getEndAt().isBefore(LocalDateTime.now()))
                 .orElse(false);
+    }
+
+    // ----------- search events
+    @Transactional(readOnly = true)
+    public Page<EventSearchDTO> searchEvents(String query, Pageable pageable) {
+        return eventRepository.searchAvailableEvents(query, LocalDateTime.now(), pageable)
+                .map(event -> new EventSearchDTO(
+                        event.getId(),
+                        event.getName(),
+                        event.getLocation(),
+                        event.getStartAt(),
+                        event.getEndAt()
+                ));
     }
 }

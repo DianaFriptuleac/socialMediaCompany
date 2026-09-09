@@ -7,6 +7,7 @@ import dianafriptuleac.socialMediaCompany.enums.Role;
 import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.UserDTO;
+import dianafriptuleac.socialMediaCompany.payloads.search.UserSearchDTO;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -156,4 +157,17 @@ public class UserService {
     public Optional<User> findOptionalByEmail(String email) {
         return this.userRepository.findByEmail(email);
     }
+
+    //----------------------- Search users
+    public Page<UserSearchDTO> searchUsers(String query, Pageable pageable) {
+        return userRepository.searchUsers(query, pageable)
+                .map(user -> new UserSearchDTO(
+                        user.getId(),
+                        user.getName(),
+                        user.getSurname(),
+                        user.getEmail(),
+                        user.getAvatar()
+                ));
+    }
+
 }

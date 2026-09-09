@@ -8,6 +8,7 @@ import dianafriptuleac.socialMediaCompany.exceptions.BadRequestException;
 import dianafriptuleac.socialMediaCompany.exceptions.NotFoundException;
 import dianafriptuleac.socialMediaCompany.payloads.jobs.JobCreateDTO;
 import dianafriptuleac.socialMediaCompany.payloads.jobs.JobUpdateDTO;
+import dianafriptuleac.socialMediaCompany.payloads.search.JobSearchDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.jobs.JobOpeningRepository;
 import jakarta.transaction.Transactional;
@@ -152,5 +153,17 @@ public class JobOpeningService {
         jobOpeningRepository.delete(job);
     }
 
+
+    // ------ search lobs
+    public Page<JobSearchDTO> searchJobs(String query, Pageable pageable) {
+        return jobOpeningRepository.searchVisibleJobs(query, JobStatus.OPEN, LocalDate.now(), pageable)
+                .map(jobOpening -> new JobSearchDTO(
+                        jobOpening.getId(),
+                        jobOpening.getTitle(),
+                        jobOpening.getLocation(),
+                        jobOpening.getDepartment() != null ? jobOpening.getDepartment().getName() : null,
+                        jobOpening.getApplicationDeadline()
+                ));
+    }
 
 }

@@ -9,10 +9,13 @@ import dianafriptuleac.socialMediaCompany.payloads.AssignRoleDTO;
 import dianafriptuleac.socialMediaCompany.payloads.DepartmentCreateDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UpdateDepartmentDTO;
 import dianafriptuleac.socialMediaCompany.payloads.UserDepartmentRolesViewDTO;
+import dianafriptuleac.socialMediaCompany.payloads.search.DepartmentSearchDTO;
 import dianafriptuleac.socialMediaCompany.repositories.DepartmentRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserDepartmentRoleRepository;
 import dianafriptuleac.socialMediaCompany.repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -202,5 +205,15 @@ public class DepartmentMembershipService {
             department.setDescription(updateDepartmentDTO.description().trim());
         }
         return departmentRepository.save(department);
+    }
+
+    //----------search department
+    public Page<DepartmentSearchDTO> serachDepartments(String query, Pageable pageable) {
+        return departmentRepository.serachDepartments(query, pageable)
+                .map(department -> new DepartmentSearchDTO(
+                        department.getId(),
+                        department.getName(),
+                        department.getDescription()
+                ));
     }
 }

@@ -30,4 +30,28 @@ public interface JobOpeningRepository extends JpaRepository<JobOpening, UUID> {
             @Param("today") LocalDate today,
             Pageable pageable
     );
+
+    // Search jobs
+    @Query("""
+            SELECT j
+            FROM JobOpening j
+            LEFT JOIN j.department d
+            WHERE j.status = :status
+              AND (
+                  j.applicationDeadline IS NULL
+                  OR j.applicationDeadline >= :today
+              )
+              AND (
+                  LOWER(j.title) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR LOWER(j.description) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR LOWER(j.requirements) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR LOWER(j.location) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR LOWER(d.name) LIKE LOWER(CONCAT('%', :query, '%'))
+              )
+            ORDER BY j.createdAt DESC
+            """)
+    Page<JobOpening> searchVisibleJobs(
+            @Param("query") String query, @Param("status") JobStatus status,
+            @Param("today") LocalDate today, Pageable pageable
+    );
 }
