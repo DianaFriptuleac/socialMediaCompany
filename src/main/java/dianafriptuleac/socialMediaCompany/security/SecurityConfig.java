@@ -69,7 +69,8 @@ public class SecurityConfig {
                 "http://localhost:3000",     // Permette richieste dal frontend in locale
                 "http://localhost:5173",
                 "https://*.onrender.com",    // Permette sottodomini su onrender.com
-                "https://*.vercel.app"));    // Permette sottodomini su vercel.app
+                "https://*.vercel.app",
+                "https://social-media-frontend-seven-eta.vercel.app"));    // Permette sottodomini su vercel.app
         configuration.setAllowedMethods(Arrays.asList(
                 "POST", "GET", "PUT", "DELETE", "PATCH", "OPTIONS"
                 //Metodi HTTP consentiti dal browser nelle richieste cross-origin
